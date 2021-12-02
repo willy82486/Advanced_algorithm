@@ -6,6 +6,6 @@
 * 104 期中亟需整理，太混亂了
 * 去問一下其他實驗室的 109 期中還在不在
 
-# Introduction of Artificial Intellience
+# Introduction of Artificial Intelligence
 * 新增 program1.cpp 半成品
 
