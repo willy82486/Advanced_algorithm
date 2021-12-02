@@ -3,6 +3,7 @@
 
 # Advanced algorithm
 * 去問一下其他實驗室的 109 期中還在不在
+* 104、110期中檔案整理已完成
 * 2021/12/01 更新 110 學年度高等演算法期中考
 * 2021/12/02 新增 Exercise 3 hexagram chessboard cpp source code
 * 2021/12/03 將 "advanced_algorithm/高演題目" 改成 "advanced_algorithm/高演作業"
