@@ -2,10 +2,15 @@
 using namespace std;
 #define int long long
 
-int fac[17] = {1, 1}, goalnum;
+int fac[17] = {1, 1}, maxstatus = 0;
 map<int, int> visit;
-vector<int> goal = {5,8,6,0,7,4,2,3,1};
+vector<int> goal = {5, 8, 6, 0, 7, 4, 2, 3, 1};
 vector<int> op[17][15]; 
+
+void print(vector<int> a){
+	for(auto i: a)cout << i << ' ';
+	cout << endl;
+}
 
 int khash(vector<int>a){
 	int t, sum = 0, n = a.size();
@@ -18,32 +23,38 @@ int khash(vector<int>a){
 }
 
 int DLS(vector<int>a, int coord, int limit){
-	cout << khash(a) << ' ' << goalnum<< endl;
-	if(limit == -1) return -1;
-	else if(khash(a) == goalnum) return limit;
-	else{
-		visit[khash(a)] = 1;
-		int ans = 0;
-		for(auto move: op[a.size()][coord]){
-			cout << coord << ' ' << move << endl; 
-			vector<int>b = a;
-			swap(b[coord], b[move]);
-			if(!visit[khash(b)]){
-				ans |= DLS(b, move, limit - 1);
-			}
-			if(ans == 1) return 1;
+	visit[khash(a)] = 1;
+	int ans = 0, ii;
+	if(khash(goal) == khash(a))return 1;
+	
+	//recursive
+	for(auto move: op[a.size()][coord]){
+		vector<int>b = a;
+		swap(b[coord], b[move]);
+		if(!visit[khash(b)] && limit > 0){
+			ans = max(ans, DLS(b, move, limit - 1));
 		}
+		if(ans == 1) return 1;
 	}
+	return ans;
 }
 
 int IDS(vector<int>a, int coord){
 	for(int limit = 0; limit < 30; limit++){
+		visit.clear();
+		cout << "Current limit is " << limit << endl;
 		int result = DLS(a, coord, limit);
-		if(result != -1) return result;
+		if(result == 1) return limit;
+		int visitsize = visit.size();
+		maxstatus = max(maxstatus, visitsize);
 	}
 	return -1;
 }
 
+int BFS(vector<int>a, int coord){
+	queue<int>status; status.push(khash(a));
+	
+}
 
 int32_t main(){
 	// init
@@ -85,7 +96,7 @@ int32_t main(){
 		b = a, sort(b.begin(), b.end());
 		int tmpsum = 0;
 		for(auto i: b)tmpsum += i;
-		if(b[0] || b[8] - 8 || tmpsum -36){
+		if(b[0] || b[8] - 8 || tmpsum - 36){
 			cout << "The puzzle format is not correct, plz re-enter the puzzle!\n";		
 		}else{
 			cout << "Choose a algorithm to execute the puzzle.\n";
@@ -95,19 +106,28 @@ int32_t main(){
 			cout << "(4). A* Search\n";
 			cout << "(5). Recursive Best-First Search(RBFS)\n";
 			while(cin >> tc){
-				goalnum = khash(goal);
-				visit[khash(a)] = 1;
-				
-				if(tc < 0 || tc > 5){
-					cout << "The command is invaild, plz enter the correct command.";
-					continue;
-				}
+				//init before each algorithm
 				int coord;
 				for(int i = 0; i < a.size(); i++){
 					if(a[i] == 0) coord = i;
 				}
+				
+				//each algorithm
+				if(tc < 0 || tc > 5){
+					cout << "The command is invaild, plz enter the correct command.";
+					continue;
+				}
 				if(tc == 1){
-					cout << "Total moves: " << IDS(a, coord) << endl;
+					int ans = IDS(a, coord);
+					if(ans > 0)cout << "Total moves: " << ans << endl;
+					else cout << "The puzzle is not solvable!\n";
+					cout << "The maximum number of states during the process is: " << maxstatus << endl;
+					break;
+				}if(tc == 2){
+					int ans = BFS(a, coord);
+					if(ans > 0)cout << "Total moves: " << ans << endl;
+					else cout << "The puzzle is not solvable!\n";
+					cout << "The maximum number of states during the process is: " << maxstatus << endl;
 					break;
 				}
 			}
