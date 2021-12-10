@@ -1,6 +1,10 @@
 #include<bits/stdc++.h>
 using namespace std;
+typedef pair<int, int> pii;
 #define int long long
+#define F first
+#define S second
+
 
 int fac[17] = {1, 1}, maxstatus = 0;
 map<int, int> visit;
@@ -20,6 +24,19 @@ int khash(vector<int>a){
 		sum += t * fac[n - i - 1];
 	}
 	return sum;
+}
+
+vector<int> rkhash(int num){
+	vector<int>a, ans;
+	for(int i = 0; i <= 8; i++)a.push_back(i);
+	for(int i = 8; i > 0; i--){
+		int r = num % fac[i], t = num / fac[i];
+		num = r;
+		ans.push_back(a[t]);
+		a.erase(a.begin() + t);
+	}
+	ans.push_back(a[0]);
+	return ans;
 }
 
 int DLS(vector<int>a, int coord, int limit){
@@ -52,8 +69,24 @@ int IDS(vector<int>a, int coord){
 }
 
 int BFS(vector<int>a, int coord){
-	queue<int>status; status.push(khash(a));
-	
+	// push the initial status
+	queue<pii>status; status.push({khash(a), coord}); visit[khash(a)] = 1;
+	//BFS algorithm
+	while(!status.empty()){
+		vector<int>top = rkhash(status.front().F);
+		print(top), cout << status.front().S << endl; 
+		for(auto move: op[a.size()][status.front().S]){
+			vector<int>b = top;
+			swap(b[coord], b[move]);
+			if(!visit[khash(b)]){
+				status.push({khash(b), move});
+				visit[khash(b)] = visit[khash(top)] + 1;
+				if(khash(b) == khash(goal))return visit[khash(b)] - 1;
+ 			}
+		}
+		status.pop();
+	}
+	return -1;
 }
 
 int32_t main(){
