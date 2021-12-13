@@ -1,9 +1,9 @@
 #include<bits/stdc++.h>
 using namespace std;
-typedef pair<int, int> pii;
 #define int long long
 #define F first
 #define S second
+typedef pair<int, int> pii;
 
 
 int fac[17] = {1, 1}, maxstatus = 0;
@@ -24,6 +24,20 @@ int khash(vector<int>a){
 		sum += t * fac[n - i - 1];
 	}
 	return sum;
+}
+
+int mdis(vector<int>a, vector<int>b){
+	int dis = 0;
+	for(int i = 0; i < a.size(); i++){
+		int coorda, coordb;
+		for(int j = 0; j < a.size(); j++){
+			if(a[j] == i) coorda = j;
+			if(b[j] == i) coordb = j;
+			
+		} 
+		dis += abs(coorda / 3 - coordb / 3) + abs(coorda % 3 - coordb % 3);
+	}
+	return dis;
 }
 
 vector<int> rkhash(int num){
@@ -87,6 +101,36 @@ int BFS(vector<int>a, int coord){
 	return -1;
 }
 
+int GBFS(vector<int>a, int coord){
+	// the third default parameter is less<int>, then return the greatest in this queue.
+	// thus, if want to return the smallest manhattan distance state, use the greater operator.
+	priority_queue<pii, vector<pii>, greater<pii> > status;
+	status.push({mdis(a, goal), khash(a)}); 
+	visit[khash(a)] = 1;
+	//BFS algorithm
+	while(!status.empty()){
+		int tmpcoord;
+		vector<int>top = rkhash(status.top().S);
+		for(int i = 0; i < top.size(); i++){
+			if(top[i] == 0) tmpcoord = i;
+		}
+		print(top);
+		for(auto move: op[top.size()][tmpcoord]){
+			vector<int>b = top;
+			swap(b[tmpcoord], b[move]);
+			if(!visit[khash(b)]){
+				int tmpcoord = 0;
+				status.push({mdis(b, goal), khash(b)});
+				visit[khash(b)] = visit[khash(top)] + 1;
+				if(khash(b) == khash(goal))return visit[khash(b)] - 1;
+ 			}
+		}
+		status.pop();
+		maxstatus = max(maxstatus, (int)visit.size());
+	}
+	return -1;
+}
+
 int32_t main(){
 	// init
 	int tc;
@@ -127,6 +171,7 @@ int32_t main(){
 		b = a, sort(b.begin(), b.end());
 		int tmpsum = 0;
 		for(auto i: b)tmpsum += i;
+		//note the checker only can check the 8-puzzle format
 		if(b[0] || b[8] - 8 || tmpsum - 36){
 			cout << "The puzzle format is not correct, plz re-enter the puzzle!\n";		
 		}else{
@@ -148,19 +193,28 @@ int32_t main(){
 				if(tc < 0 || tc > 5){
 					cout << "The command is invaild, plz enter the correct command.";
 					continue;
-				}
-				if(tc == 1){
+				}else if(tc == 1){
 					int ans = IDS(a, coord);
 					if(ans >= 0)cout << "Total moves: " << ans << endl;
 					else cout << "The puzzle is not solvable!\n";
 					cout << "The maximum number of states during the process is: " << maxstatus << endl;
 					break;
-				}if(tc == 2){
+				}else if(tc == 2){
 					int ans = BFS(a, coord);
 					if(ans > 0)cout << "Total moves: " << ans << endl;
 					else cout << "The puzzle is not solvable!\n";
 					cout << "The maximum number of states during the process is: " << maxstatus << endl;
 					break;
+				}else if(tc == 3){
+					int ans = GBFS(a, coord);
+					if(ans > 0)cout << "Total moves: " << ans << endl;
+					else cout << "The puzzle is not solvable!\n";
+					cout << "The maximum number of states during the process is: " << maxstatus << endl;
+					break;
+				}else if(tc == 4){
+					cout << mdis(a, goal);
+				}else{
+				
 				}
 			}
 		}
