@@ -39,8 +39,7 @@ vector<int> rkhash(int num){
 	return ans;
 }
 
-int DLS(vector<int>a, int coord, int limit){
-	visit[khash(a)] = 1;
+int DLS(vector<int>a, int parent, int coord, int limit){
 	int ans = 0, ii;
 	if(khash(goal) == khash(a))return 1;
 	
@@ -48,8 +47,8 @@ int DLS(vector<int>a, int coord, int limit){
 	for(auto move: op[a.size()][coord]){
 		vector<int>b = a;
 		swap(b[coord], b[move]);
-		if(!visit[khash(b)] && limit > 0){
-			ans = max(ans, DLS(b, move, limit - 1));
+		if(khash(b) != parent && limit > 0){
+			ans = max(ans, DLS(b, khash(a), move, limit - 1));
 		}
 		if(ans == 1) return 1;
 	}
@@ -58,12 +57,10 @@ int DLS(vector<int>a, int coord, int limit){
 
 int IDS(vector<int>a, int coord){
 	for(int limit = 0; limit < 30; limit++){
-		visit.clear();
 		cout << "Current limit is " << limit << endl;
-		int result = DLS(a, coord, limit);
+		int result = DLS(a, khash(a), coord, limit);
+		maxstatus = limit + 1;
 		if(result == 1) return limit;
-		int visitsize = visit.size();
-		maxstatus = max(maxstatus, visitsize);
 	}
 	return -1;
 }
@@ -74,17 +71,18 @@ int BFS(vector<int>a, int coord){
 	//BFS algorithm
 	while(!status.empty()){
 		vector<int>top = rkhash(status.front().F);
-		print(top), cout << status.front().S << endl; 
 		for(auto move: op[a.size()][status.front().S]){
 			vector<int>b = top;
-			swap(b[coord], b[move]);
+			swap(b[status.front().S], b[move]);
 			if(!visit[khash(b)]){
+				int tmpcoord = 0;
 				status.push({khash(b), move});
 				visit[khash(b)] = visit[khash(top)] + 1;
 				if(khash(b) == khash(goal))return visit[khash(b)] - 1;
  			}
 		}
 		status.pop();
+		maxstatus = max(maxstatus, (int)visit.size());
 	}
 	return -1;
 }
@@ -141,6 +139,7 @@ int32_t main(){
 			while(cin >> tc){
 				//init before each algorithm
 				int coord;
+				maxstatus = -1;
 				for(int i = 0; i < a.size(); i++){
 					if(a[i] == 0) coord = i;
 				}
@@ -152,7 +151,7 @@ int32_t main(){
 				}
 				if(tc == 1){
 					int ans = IDS(a, coord);
-					if(ans > 0)cout << "Total moves: " << ans << endl;
+					if(ans >= 0)cout << "Total moves: " << ans << endl;
 					else cout << "The puzzle is not solvable!\n";
 					cout << "The maximum number of states during the process is: " << maxstatus << endl;
 					break;
