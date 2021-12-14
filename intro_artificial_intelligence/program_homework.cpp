@@ -11,6 +11,15 @@ map<int, int> visit;
 vector<int> goal = {5, 8, 6, 0, 7, 4, 2, 3, 1};
 vector<int> op[17][15]; 
 
+struct rbfs_node{
+	int c;
+	vector<int>st, f;
+	bool operator < (const rbfs_node &x) const{
+		return x.c < c;
+	}	
+};
+typedef pair<int, rbfs_node> pir;
+
 void print(vector<int> a){
 	for(auto i: a)cout << i << ' ';
 	cout << endl;
@@ -155,8 +164,53 @@ int Astar(vector<int>a, int coord){
 	return -1;
 }
 
-int RBFS(){
+int RBFS(vector<int>a){
+	int coord;
+	priority_queue<pir, vector<pir>, greater<pir> >status;
+	rbfs_node ptmp; ptmp.c = 0, ptmp.st = a;
+	status.push({mdis(a, goal), ptmp});
+	visit[khash(a)] = mdis(a, goal);
 	
+	while(!status.empty()){
+		maxstatus = max(maxstatus, (int)status.size());
+		auto tmp = status.top(); status.pop();
+		visit.erase(khash(tmp.S.st));
+		if(khash(tmp.S.st) == khash(goal)) return tmp.S.c;
+		vector<int> cur_node = tmp.S.st, f_node = tmp.S.f;
+		pii min_son; min_son.F = 1e9;
+		if(!f_node.empty()){
+			for(int i = 0; i < f_node.size(); i++){
+				if(f_node[i] == 0) coord = i;
+			}
+			for(auto move: op[f_node.size()][coord]){
+				vector<int>b = f_node;
+				swap(b[coord], b[move]);
+				if(khash(b) == khash(cur_node)) continue;
+				if(visit[khash(b)] == 0) visit[khash(b)] = mdis(b, goal) + tmp.S.c + 1;
+				if(visit[khash(b)] < min_son.F) min_son = {visit[khash(b)], khash(b)};
+			}
+			if(status.empty() || status.top().F >= min_son.F){
+				ptmp.c = tmp.S.c, ptmp.f = tmp.S.f, ptmp.st = rkhash(min_son.S);
+				status.push({min_son.F, ptmp});
+			}
+		}
+		min_son.F = 1e9;
+		for(int i = 0; i < cur_node.size(); i++){
+			if(cur_node[i] == 0) coord = i;
+		}
+		for(auto move: op[cur_node.size()][coord]){
+			vector<int>b = cur_node;
+			swap(b[coord], b[move]);
+			if(khash(b) == khash(cur_node)) continue;
+			if(visit[khash(b)] == 0) visit[khash(b)] = mdis(b, goal) + tmp.S.c + 1;
+			if(visit[khash(b)] < min_son.F) min_son = {visit[khash(b)], khash(b)};
+		}
+		if(status.empty() || status.top().F >= min_son.F){
+			ptmp.c = tmp.S.c + 1, ptmp.f = tmp.S.st, ptmp.st = rkhash(min_son.S);
+			status.push({min_son.F, ptmp});
+		}else visit[khash(cur_node)] = min_son.F;
+	}
+	return -1;
 }
 
 int32_t main(){
@@ -213,6 +267,7 @@ int32_t main(){
 				//init before each algorithm
 				int coord;
 				maxstatus = -1;
+				visit.clear();
 				for(int i = 0; i < a.size(); i++){
 					if(a[i] == 0) coord = i;
 				}
@@ -246,7 +301,7 @@ int32_t main(){
 					cout << "The maximum number of states during the process is: " << maxstatus << endl;
 					break;
 				}else{
-					int ans = RBFS(a, coord);
+					int ans = RBFS(a);
 					if(ans > 0)cout << "Total moves: " << ans << endl;
 					else cout << "The puzzle is not solvable!\n";
 					cout << "The maximum number of states during the process is: " << maxstatus << endl;
