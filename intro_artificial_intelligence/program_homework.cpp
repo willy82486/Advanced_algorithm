@@ -102,19 +102,17 @@ int BFS(vector<int>a, int coord){
 }
 
 int GBFS(vector<int>a, int coord){
-	// the third default parameter is less<int>, then return the greatest in this queue.
-	// thus, if want to return the smallest manhattan distance state, use the greater operator.
 	priority_queue<pii, vector<pii>, greater<pii> > status;
 	status.push({mdis(a, goal), khash(a)}); 
 	visit[khash(a)] = 1;
-	//BFS algorithm
+	//BFS algorithm with priority queue sorted by manhattan distance
 	while(!status.empty()){
 		int tmpcoord;
 		vector<int>top = rkhash(status.top().S);
+		status.pop();
 		for(int i = 0; i < top.size(); i++){
 			if(top[i] == 0) tmpcoord = i;
 		}
-		print(top);
 		for(auto move: op[top.size()][tmpcoord]){
 			vector<int>b = top;
 			swap(b[tmpcoord], b[move]);
@@ -125,10 +123,40 @@ int GBFS(vector<int>a, int coord){
 				if(khash(b) == khash(goal))return visit[khash(b)] - 1;
  			}
 		}
-		status.pop();
 		maxstatus = max(maxstatus, (int)visit.size());
 	}
 	return -1;
+}
+
+int Astar(vector<int>a, int coord){
+	priority_queue<pii, vector<pii>, greater<pii> > status;
+	status.push({mdis(a, goal) + 1, khash(a)}); 
+	visit[khash(a)] = 1;
+	//similar with GBFS, but sorted by h(x) = manhattan dis + curr length
+	while(!status.empty()){
+		int tmpcoord;
+		vector<int>top = rkhash(status.top().S);
+		status.pop();
+		for(int i = 0; i < top.size(); i++){
+			if(top[i] == 0) tmpcoord = i;
+		}
+		for(auto move: op[top.size()][tmpcoord]){
+			vector<int>b = top;
+			swap(b[tmpcoord], b[move]);
+			if(!visit[khash(b)]){
+				int tmpcoord = 0;
+				visit[khash(b)] = visit[khash(top)] + 1;
+				status.push({mdis(b, goal) + visit[khash(b)], khash(b)});
+				if(khash(b) == khash(goal))return visit[khash(b)] - 1;
+ 			}
+		}
+		maxstatus = max(maxstatus, (int)visit.size());
+	}
+	return -1;
+}
+
+int RBFS(){
+	
 }
 
 int32_t main(){
@@ -212,9 +240,17 @@ int32_t main(){
 					cout << "The maximum number of states during the process is: " << maxstatus << endl;
 					break;
 				}else if(tc == 4){
-					cout << mdis(a, goal);
+					int ans = Astar(a, coord);
+					if(ans > 0)cout << "Total moves: " << ans << endl;
+					else cout << "The puzzle is not solvable!\n";
+					cout << "The maximum number of states during the process is: " << maxstatus << endl;
+					break;
 				}else{
-				
+					int ans = RBFS(a, coord);
+					if(ans > 0)cout << "Total moves: " << ans << endl;
+					else cout << "The puzzle is not solvable!\n";
+					cout << "The maximum number of states during the process is: " << maxstatus << endl;
+					break;
 				}
 			}
 		}
