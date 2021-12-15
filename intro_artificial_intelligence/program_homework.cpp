@@ -48,10 +48,10 @@ int mdis(vector<int>a, vector<int>b){
 	return dis;
 }
 
-vector<int> rkhash(int num){
+vector<int> rkhash(int num, int vsize){
 	vector<int>a, ans;
-	for(int i = 0; i <= 8; i++)a.push_back(i);
-	for(int i = 8; i > 0; i--){
+	for(int i = 0; i <= vsize - 1; i++)a.push_back(i);
+	for(int i = vsize - 1; i > 0; i--){
 		int r = num % fac[i], t = num / fac[i];
 		num = r;
 		ans.push_back(a[t]);
@@ -89,10 +89,15 @@ int IDS(vector<int>a, int coord){
 int BFS(vector<int>a, int coord){
 	// push the initial status
 	queue<pii>status; status.push({coord, khash(a)}); visit[khash(a)] = 1;
+	if(khash(a) == khash(goal)) return visit[khash(a)] - 1;
 	//BFS algorithm
 	while(!status.empty()){
-		vector<int>top = rkhash(status.front().S);
-		for(auto move: op[a.size()][status.front().F]){
+		vector<int>top = rkhash(status.front().S, a.size());
+		tmpcoord = 0;
+		for(int i = 0; i < top.size(); i++){
+			if(top[i] == 0) tmpcoord = i;
+		}
+		for(auto move: op[top.size()][tmpcoord]){
 			vector<int>b = top;
 			swap(b[status.front().F], b[move]);
 			if(!visit[khash(b)]){
@@ -115,7 +120,7 @@ int GBFS(vector<int>a, int mode){
 	visit[khash(a)] = 1;
 	//BFS algorithm with priority queue sorted by manhattan distance
 	while(!status.empty()){
-		vector<int>top = rkhash(status.top().S);
+		vector<int>top = rkhash(status.top().S, a.size());
 		status.pop();
 		for(int i = 0; i < top.size(); i++){
 			if(top[i] == 0) tmpcoord = i;
@@ -159,7 +164,7 @@ int RBFS(vector<int>a){
 				if(visit[khash(b)] < min_child.F) min_child = {visit[khash(b)], khash(b)};
 			}
 			if(status.empty() || status.top().F >= min_child.F){
-				ptmp.c = tmp.S.c, ptmp.f = tmp.S.f, ptmp.st = rkhash(min_child.S);
+				ptmp.c = tmp.S.c, ptmp.f = tmp.S.f, ptmp.st = rkhash(min_child.S, a.size());
 				status.push({min_child.F, ptmp});
 			}
 		}
@@ -175,7 +180,7 @@ int RBFS(vector<int>a){
 			if(visit[khash(b)] < min_child.F) min_child = {visit[khash(b)], khash(b)};
 		}
 		if(status.empty() || status.top().F >= min_child.F){
-			ptmp.c = tmp.S.c + 1, ptmp.f = tmp.S.st, ptmp.st = rkhash(min_child.S);
+			ptmp.c = tmp.S.c + 1, ptmp.f = tmp.S.st, ptmp.st = rkhash(min_child.S, a.size());
 			status.push({min_child.F, ptmp});
 		}else visit[khash(cur_node)] = min_child.F;
 	}
