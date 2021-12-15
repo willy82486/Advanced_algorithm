@@ -5,20 +5,19 @@ using namespace std;
 #define S second
 typedef pair<int, int> pii;
 
-
-int fac[17] = {1, 1}, maxstatus = 0;
+int fac[17] = {1, 1}, maxstatus = 0, tmpcoord;
 map<int, int> visit;
-vector<int> goal = {5, 8, 6, 0, 7, 4, 2, 3, 1};
-vector<int> op[17][15]; 
+vector<int> goal;
+vector<vector<int>> op[17]; 
 
-struct rbfs_node{
+struct node{
 	int c;
 	vector<int>st, f;
-	bool operator < (const rbfs_node &x) const{
+	bool operator < (const node &x) const{
 		return x.c < c;
 	}	
 };
-typedef pair<int, rbfs_node> pir;
+typedef pair<int, node> pir;
 
 void print(vector<int> a){
 	for(auto i: a)cout << i << ' ';
@@ -65,7 +64,6 @@ vector<int> rkhash(int num){
 int DLS(vector<int>a, int parent, int coord, int limit){
 	int ans = 0, ii;
 	if(khash(goal) == khash(a))return 1;
-	
 	//recursive
 	for(auto move: op[a.size()][coord]){
 		vector<int>b = a;
@@ -90,16 +88,15 @@ int IDS(vector<int>a, int coord){
 
 int BFS(vector<int>a, int coord){
 	// push the initial status
-	queue<pii>status; status.push({khash(a), coord}); visit[khash(a)] = 1;
+	queue<pii>status; status.push({coord, khash(a)}); visit[khash(a)] = 1;
 	//BFS algorithm
 	while(!status.empty()){
-		vector<int>top = rkhash(status.front().F);
-		for(auto move: op[a.size()][status.front().S]){
+		vector<int>top = rkhash(status.front().S);
+		for(auto move: op[a.size()][status.front().F]){
 			vector<int>b = top;
-			swap(b[status.front().S], b[move]);
+			swap(b[status.front().F], b[move]);
 			if(!visit[khash(b)]){
-				int tmpcoord = 0;
-				status.push({khash(b), move});
+				status.push({move, khash(b)});
 				visit[khash(b)] = visit[khash(top)] + 1;
 				if(khash(b) == khash(goal))return visit[khash(b)] - 1;
  			}
@@ -110,13 +107,14 @@ int BFS(vector<int>a, int coord){
 	return -1;
 }
 
-int GBFS(vector<int>a, int coord){
+int GBFS(vector<int>a, int mode){
+	//combine GBFS and Astar in same function
+	//if mode == 3, then GBFS, if mode == 4, then Astar.
 	priority_queue<pii, vector<pii>, greater<pii> > status;
-	status.push({mdis(a, goal), khash(a)}); 
+	status.push({mdis(a, goal) + (mode == 4) * 1, khash(a)}); 
 	visit[khash(a)] = 1;
 	//BFS algorithm with priority queue sorted by manhattan distance
 	while(!status.empty()){
-		int tmpcoord;
 		vector<int>top = rkhash(status.top().S);
 		status.pop();
 		for(int i = 0; i < top.size(); i++){
@@ -126,36 +124,8 @@ int GBFS(vector<int>a, int coord){
 			vector<int>b = top;
 			swap(b[tmpcoord], b[move]);
 			if(!visit[khash(b)]){
-				int tmpcoord = 0;
-				status.push({mdis(b, goal), khash(b)});
 				visit[khash(b)] = visit[khash(top)] + 1;
-				if(khash(b) == khash(goal))return visit[khash(b)] - 1;
- 			}
-		}
-		maxstatus = max(maxstatus, (int)visit.size());
-	}
-	return -1;
-}
-
-int Astar(vector<int>a, int coord){
-	priority_queue<pii, vector<pii>, greater<pii> > status;
-	status.push({mdis(a, goal) + 1, khash(a)}); 
-	visit[khash(a)] = 1;
-	//similar with GBFS, but sorted by h(x) = manhattan dis + curr length
-	while(!status.empty()){
-		int tmpcoord;
-		vector<int>top = rkhash(status.top().S);
-		status.pop();
-		for(int i = 0; i < top.size(); i++){
-			if(top[i] == 0) tmpcoord = i;
-		}
-		for(auto move: op[top.size()][tmpcoord]){
-			vector<int>b = top;
-			swap(b[tmpcoord], b[move]);
-			if(!visit[khash(b)]){
-				int tmpcoord = 0;
-				visit[khash(b)] = visit[khash(top)] + 1;
-				status.push({mdis(b, goal) + visit[khash(b)], khash(b)});
+				status.push({mdis(b, goal) + visit[khash(b)] * (mode == 4), khash(b)});
 				if(khash(b) == khash(goal))return visit[khash(b)] - 1;
  			}
 		}
@@ -165,9 +135,8 @@ int Astar(vector<int>a, int coord){
 }
 
 int RBFS(vector<int>a){
-	int coord;
 	priority_queue<pir, vector<pir>, greater<pir> >status;
-	rbfs_node ptmp; ptmp.c = 0, ptmp.st = a;
+	node ptmp; ptmp.c = 0, ptmp.st = a;
 	status.push({mdis(a, goal), ptmp});
 	visit[khash(a)] = mdis(a, goal);
 	
@@ -177,86 +146,71 @@ int RBFS(vector<int>a){
 		visit.erase(khash(tmp.S.st));
 		if(khash(tmp.S.st) == khash(goal)) return tmp.S.c;
 		vector<int> cur_node = tmp.S.st, f_node = tmp.S.f;
-		pii min_son; min_son.F = 1e9;
+		pii min_child; min_child.F = 1e9;
 		if(!f_node.empty()){
 			for(int i = 0; i < f_node.size(); i++){
-				if(f_node[i] == 0) coord = i;
+				if(f_node[i] == 0) tmpcoord = i;
 			}
-			for(auto move: op[f_node.size()][coord]){
+			for(auto move: op[f_node.size()][tmpcoord]){
 				vector<int>b = f_node;
-				swap(b[coord], b[move]);
+				swap(b[tmpcoord], b[move]);
 				if(khash(b) == khash(cur_node)) continue;
 				if(visit[khash(b)] == 0) visit[khash(b)] = mdis(b, goal) + tmp.S.c + 1;
-				if(visit[khash(b)] < min_son.F) min_son = {visit[khash(b)], khash(b)};
+				if(visit[khash(b)] < min_child.F) min_child = {visit[khash(b)], khash(b)};
 			}
-			if(status.empty() || status.top().F >= min_son.F){
-				ptmp.c = tmp.S.c, ptmp.f = tmp.S.f, ptmp.st = rkhash(min_son.S);
-				status.push({min_son.F, ptmp});
+			if(status.empty() || status.top().F >= min_child.F){
+				ptmp.c = tmp.S.c, ptmp.f = tmp.S.f, ptmp.st = rkhash(min_child.S);
+				status.push({min_child.F, ptmp});
 			}
 		}
-		min_son.F = 1e9;
+		min_child.F = 1e9;
 		for(int i = 0; i < cur_node.size(); i++){
-			if(cur_node[i] == 0) coord = i;
+			if(cur_node[i] == 0) tmpcoord = i;
 		}
-		for(auto move: op[cur_node.size()][coord]){
+		for(auto move: op[cur_node.size()][tmpcoord]){
 			vector<int>b = cur_node;
-			swap(b[coord], b[move]);
+			swap(b[tmpcoord], b[move]);
 			if(khash(b) == khash(cur_node)) continue;
 			if(visit[khash(b)] == 0) visit[khash(b)] = mdis(b, goal) + tmp.S.c + 1;
-			if(visit[khash(b)] < min_son.F) min_son = {visit[khash(b)], khash(b)};
+			if(visit[khash(b)] < min_child.F) min_child = {visit[khash(b)], khash(b)};
 		}
-		if(status.empty() || status.top().F >= min_son.F){
-			ptmp.c = tmp.S.c + 1, ptmp.f = tmp.S.st, ptmp.st = rkhash(min_son.S);
-			status.push({min_son.F, ptmp});
-		}else visit[khash(cur_node)] = min_son.F;
+		if(status.empty() || status.top().F >= min_child.F){
+			ptmp.c = tmp.S.c + 1, ptmp.f = tmp.S.st, ptmp.st = rkhash(min_child.S);
+			status.push({min_child.F, ptmp});
+		}else visit[khash(cur_node)] = min_child.F;
 	}
 	return -1;
 }
 
 int32_t main(){
 	// init
-	int tc;
-	vector<int>a(9), b;
+	int tc, tmpinput;
+	string s;
 	for(int i = 2; i < 16; i++) fac[i] = fac[i-1] * i;
 	//opeartions for 8-puzzles
-	op[9][0] = {1, 3};
-	op[9][1] = {0, 2, 4};
-	op[9][2] = {1, 5};
-	op[9][3] = {0, 4, 6};
-	op[9][4] = {1, 3, 5, 7};
-	op[9][5] = {2, 4, 8};
-	op[9][6] = {3, 7};
-	op[9][7] = {4, 6, 8};
-	op[9][8] = {5, 7};
+	op[9].resize(9);
+	op[9] =  {{1, 3}, {0, 2, 4}, {1, 5}, {0, 4, 6}, {1, 3, 5, 7}, {2, 4, 8}, {3, 7}, {4, 6, 8}, {5, 7}};
 	//opeartions for 15-puzzles
-	op[16][0] = {1, 4};
-	op[16][1] = {0, 2, 5};
-	op[16][2] = {1, 3, 6};
-	op[16][3] = {2, 7};
-	op[16][4] = {0, 5, 8};
-	op[16][5] = {1, 4, 6, 9};
-	op[16][6] = {2, 5, 7, 10};
-	op[16][7] = {3, 6, 11};
-	op[16][8] = {4, 9, 12};
-	op[16][9] = {5, 8, 10, 13};
-	op[16][10] = {6, 9, 11, 14};
-	op[16][11] = {7, 10, 15};
-	op[16][12] = {8, 13};
-	op[16][13] = {9, 12, 14};
-	op[16][14] = {10, 13, 15};
-	op[16][15] = {11, 14};
+	op[16].resize(16);
+	op[16] = {{1, 4}, {0, 2, 5}, {1, 3, 6}, {2, 7}, {0, 5, 8}, {1, 4, 6, 9}, 
+	 {2, 5, 7, 10},{3, 6, 11}, {4, 9, 12}, {5, 8, 10, 13}, {6, 9, 11, 14}, 
+	 {7, 10, 15}, {8, 13}, {9, 12, 14}, {10, 13, 15}, {11, 14}};	
 	
 	// main UI
-	while(cin >> a[0]){
-		visit.clear();
-		for(int i = 1; i < 9; i++) cin >> a[i];
-		b = a, sort(b.begin(), b.end());
+	while(getline(cin, s)){
+		vector<int>a, b;
+		visit.clear(); 
+		stringstream ss; ss.str(s); 
+		while(ss >> tmpinput) a.push_back(tmpinput);
+		b = a; sort(b.begin(), b.end());
 		int tmpsum = 0;
 		for(auto i: b)tmpsum += i;
-		//note the checker only can check the 8-puzzle format
-		if(b[0] || b[8] - 8 || tmpsum - 36){
+		if(!((b.size() == 9 || b.size() == 16) && (b[0] == 0) && (b[b.size() - 1] == b.size() - 1)
+			&& (tmpsum == b.size() * (b.size() - 1) / 2))){
 			cout << "The puzzle format is not correct, plz re-enter the puzzle!\n";		
 		}else{
+			if(a.size() == 9) goal = {5, 8, 6, 0, 7, 4, 2, 3, 1};
+			else goal = {7, 14, 11, 5, 8, 12, 13, 10, 2, 0, 4, 15, 6, 3, 9, 1};
 			cout << "Choose a algorithm to execute the puzzle.\n";
 			cout << "(1). Iterative-Deepening Search(IDS)\n";
 			cout << "(2). Uniform-Cost Search\n";
@@ -264,45 +218,30 @@ int32_t main(){
 			cout << "(4). A* Search\n";
 			cout << "(5). Recursive Best-First Search(RBFS)\n";
 			while(cin >> tc){
+				getline(cin, s);
 				//init before each algorithm
-				int coord;
 				maxstatus = -1;
 				visit.clear();
 				for(int i = 0; i < a.size(); i++){
-					if(a[i] == 0) coord = i;
+					if(a[i] == 0) tmpcoord = i;
 				}
 				
 				//each algorithm
 				if(tc < 0 || tc > 5){
 					cout << "The command is invaild, plz enter the correct command.";
 					continue;
-				}else if(tc == 1){
-					int ans = IDS(a, coord);
-					if(ans >= 0)cout << "Total moves: " << ans << endl;
-					else cout << "The puzzle is not solvable!\n";
-					cout << "The maximum number of states during the process is: " << maxstatus << endl;
-					break;
-				}else if(tc == 2){
-					int ans = BFS(a, coord);
-					if(ans > 0)cout << "Total moves: " << ans << endl;
-					else cout << "The puzzle is not solvable!\n";
-					cout << "The maximum number of states during the process is: " << maxstatus << endl;
-					break;
-				}else if(tc == 3){
-					int ans = GBFS(a, coord);
-					if(ans > 0)cout << "Total moves: " << ans << endl;
-					else cout << "The puzzle is not solvable!\n";
-					cout << "The maximum number of states during the process is: " << maxstatus << endl;
-					break;
-				}else if(tc == 4){
-					int ans = Astar(a, coord);
-					if(ans > 0)cout << "Total moves: " << ans << endl;
-					else cout << "The puzzle is not solvable!\n";
-					cout << "The maximum number of states during the process is: " << maxstatus << endl;
-					break;
 				}else{
-					int ans = RBFS(a);
-					if(ans > 0)cout << "Total moves: " << ans << endl;
+					int ans;
+					if(tc == 1){
+						ans = IDS(a, tmpcoord);
+					}else if(tc == 2){
+						ans = BFS(a, tmpcoord);
+					}else if(tc == 3 || tc == 4){
+						ans = GBFS(a, tc);
+					}else{
+						ans = RBFS(a);
+					}
+					if(ans >= 0)cout << "Total moves: " << ans << endl;
 					else cout << "The puzzle is not solvable!\n";
 					cout << "The maximum number of states during the process is: " << maxstatus << endl;
 					break;
