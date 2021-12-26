@@ -9,6 +9,12 @@
 * 2021/12/03 將 "advanced_algorithm/高演題目" 改成 "advanced_algorithm/高演作業"
 
 # Introduction of Artificial Intelligence
-* 新增 program1.cpp 半成品
-* https://github.com/NiloofarShahbaz/8-puzzle-search-implementation/blob/master/RBFS_search.py
+## Program1
+* RBFS algo referential code: https://github.com/NiloofarShahbaz/8-puzzle-search-implementation/blob/master/RBFS_search.py
+* RBFS為參考毅翔的，要找時間改
+* Astar算出來並不是最短路徑，要找一下bug
+* IDS 目前算法僅保證不會走回父節點，但可能要改成不要走回 distance 較高的路徑，if current state distance < stored state distance, update visit[khash(state)] and run DFS
+
+
+
 
